@@ -1,6 +1,6 @@
 # fsvault
 
-[![release](https://github.com/thisdougb/fsvault/actions/workflows/release.yaml/badge.svg)](https://github.com/thisdougb/fsvault/actions/workflows/release.yaml)
+[![release](https://github.com/thisdougb/go-fsvault/actions/workflows/release.yaml/badge.svg)](https://github.com/thisdougb/go-fsvault/actions/workflows/release.yaml)
 
 ## Overview
 
