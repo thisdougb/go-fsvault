@@ -7,7 +7,7 @@
 Easy to use package for storing data on the filesystem, with encryption.
 
 ```
-go get github.com/thisdougb/fsvault
+go get github.com/thisdougb/go-fsvault
 ```
 
 ## Usecase
