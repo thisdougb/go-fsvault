@@ -29,6 +29,8 @@ With the cli commands I can roll encryption keys regularly, without all the dram
 The basics:
 
 ```
+import "github.com/thisdougb/go-fsvault/pkg/fsvault"
+
 func NewFSVault(location string, encryptionKeys ...string) *FSVault
 
 func (f *FSVault) KeyExists(key string) (bool, error)
