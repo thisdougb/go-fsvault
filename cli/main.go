@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/thisdougb/go-fsvault/fsvault"
 	"github.com/thisdougb/go-fsvault/internal/config"
-	"github.com/thisdougb/go-fsvault/pkg/fsvault"
 )
 
 var (

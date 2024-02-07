@@ -1,13 +1,13 @@
 # fsvault
 
-[![release](https://github.com/thisdougb/fsvault/actions/workflows/release.yaml/badge.svg)](https://github.com/thisdougb/fsvault/actions/workflows/release.yaml)
+[![release](https://github.com/thisdougb/go-fsvault/actions/workflows/release.yaml/badge.svg)](https://github.com/thisdougb/go-fsvault/actions/workflows/release.yaml)
 
 ## Overview
 
 Easy to use package for storing data on the filesystem, with encryption.
 
 ```
-go get github.com/thisdougb/fsvault
+go get github.com/thisdougb/go-fsvault
 ```
 
 ## Usecase
@@ -29,6 +29,8 @@ With the cli commands I can roll encryption keys regularly, without all the dram
 The basics:
 
 ```
+import "github.com/thisdougb/go-fsvault/fsvault"
+
 func NewFSVault(location string, encryptionKeys ...string) *FSVault
 
 func (f *FSVault) KeyExists(key string) (bool, error)
