@@ -31,9 +31,6 @@ The commands are:
     list      list keys at a datastore path
     refresh   refresh encryption for a key/value
 
-Use "fsvcli <command> -h" for more information about a command.
-
-
 Examples:
 
     $ fsvcli put -key "/user/23/passphrase" -data "Pssst… The green cow has eaten the maple oatmeal"
@@ -41,8 +38,16 @@ Examples:
     $ fsvcli get -key "/user/23/passphrase"       
     Pssst… The green cow has eaten the maple oatmeal
 
+    $ fsvcli put -h
+    Usage of put:
+      -data string
+        	data to store
+      -debug
+        	enable debug
+      -key string
+        	key to the data
 
-# Go Library
+### Go Library
 
 ```
 import "github.com/thisdougb/go-fsvault/fsvault"
