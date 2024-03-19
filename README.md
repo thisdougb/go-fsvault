@@ -4,29 +4,50 @@
 
 ## Overview
 
-Easy to use package for storing data on the filesystem, with encryption.
+Package and cli tool for storing data on the filesystem, with encryption.
 
 ```
-go get github.com/thisdougb/go-fsvault
+go install github.com/thisdougb/go-fsvault/fsvcli
 ```
-
-## Usecase
-
-I use fsvault to store app data, encrypted at rest.
-Very simple, and much less to go wrong than other data storage options.
-
-I also use it to store unencrypted pre-generated data for serving web content.
-
-With the cli commands I can roll encryption keys regularly, without all the drama.
-
-## Strategy
-
-- Design the API with a similar feel to a database interface, so it feels like a drop-in replacement. Simple crud type operations.
-- Support encrypting content with a low barrier to entry, including easy encryption key rollover.
 
 ## Walkthrough
 
-The basics:
+### Command Line
+
+Two environment variables control conffiguration:
+
+    FSVAULT_PATH          the datastore filesystem path, defaults to /tmp
+    FSVAULT_SECRET_KEYS   a list of encryption keys, see docs for more information
+
+Usage:
+
+    fsvcli <command> [arguments] [-debug]
+
+The commands are:
+
+    put       put a value into the datastore
+    get       get a value from the datastore
+    delete    delete a key in the datastore
+    list      list keys at a datastore path
+    refresh   refresh encryption for a key/value
+
+Examples:
+
+    $ fsvcli put -key "/user/23/passphrase" -data "Pssst… The green cow has eaten the maple oatmeal"
+
+    $ fsvcli get -key "/user/23/passphrase"       
+    Pssst… The green cow has eaten the maple oatmeal
+
+    $ fsvcli put -h
+    Usage of put:
+      -data string
+        	data to store
+      -debug
+        	enable debug
+      -key string
+        	key to the data
+
+### Go Library
 
 ```
 import "github.com/thisdougb/go-fsvault/fsvault"
@@ -94,7 +115,7 @@ Pssst… The green cow has eaten the maple oatmeal
 $
 ```
 
-In real life, a simple shell for-loop can read all keys to roll the data encryption.
+A simple shell for-loop can read all keys to roll the data encryption, forcing re-encryption.
 Once all data is refreshed, we can remove the old encryption key:
 
 ```
@@ -102,7 +123,4 @@ $ export FSVAULT_SECRET_KEYS='key2-ensu6fjyivh26fnr5gbaqw3f6go'
 $ fsvault get -key "/user/23/passphrase"
 Pssst… The green cow has eaten the maple oatmeal
 ```
-
-This rollover happens on-the-fly when using the fsvault package.
-The cli interface allows Ops people to force a refresh, in a timely manner.
 
