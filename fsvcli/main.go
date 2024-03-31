@@ -21,6 +21,9 @@ func init() {
 	location = cfg.ValueAsStr("FSVAULT_PATH")
 }
 
+/*
+fsvcli provides a command line interface to an fsvault datastore.
+*/
 func main() {
 
 	refreshCmd := flag.NewFlagSet("refresh", flag.ExitOnError)
@@ -45,6 +48,36 @@ func main() {
 	deleteDebug := deleteCmd.Bool("debug", false, "enable debug")
 
 	if len(os.Args) < 2 {
+		fmt.Println(`
+The fsvcli tool interacts with an FSVault key/value datastore.
+
+Two environment variables control conffiguration:
+
+    FSVAULT_PATH          the datastore filesystem path, defaults to /tmp
+    FSVAULT_SECRET_KEYS   a list of encryption keys, see docs for more information
+
+Usage:
+
+    fsvcli <command> [arguments] [-debug]
+
+The commands are:
+
+    put       put a value into the datastore
+    get       get a value from the datastore
+    delete    delete a key in the datastore
+    list      list keys at a datastore path
+    refresh   refresh encryption for a key/value
+
+Use "fsvcli <command> -h" for more information about a command.
+
+Examples:
+
+    $ fsvcli put -key "/user/23/passphrase" -data "Pssst… The green cow has eaten the maple oatmeal"
+
+    $ fsvcli get -key "/user/23/passphrase"       
+    Pssst… The green cow has eaten the maple oatmeal
+
+		`)
 		os.Exit(1)
 	}
 

@@ -22,7 +22,7 @@ builds:
       - linux
     goarch:
       - "amd64"
-    main: ./cli/
+    main: ./fsvcli/
 
 archives:
   - format: tar.gz
