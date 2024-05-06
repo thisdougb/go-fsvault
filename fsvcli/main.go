@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -12,12 +13,12 @@ import (
 
 var (
 	encryptionKeys []string
-	location       string
+	datadir        string
 )
 
 func init() {
 	encryptionKeys = getEncryptionKeysFromEnv()
-	location = config.StringValue("FSVAULT_DATADIR")
+	datadir = config.StringValue("FSVAULT_DATADIR")
 }
 
 /*
@@ -27,37 +28,32 @@ func main() {
 
 	refreshCmd := flag.NewFlagSet("refresh", flag.ExitOnError)
 	refreshKey := refreshCmd.String("key", "", "key to the data")
-	refreshDebug := refreshCmd.Bool("debug", false, "enable debug")
 
 	getCmd := flag.NewFlagSet("get", flag.ExitOnError)
 	getKey := getCmd.String("key", "", "key to the data")
-	getDebug := getCmd.Bool("debug", false, "enable debug")
 
 	putCmd := flag.NewFlagSet("put", flag.ExitOnError)
 	putKey := putCmd.String("key", "", "key to the data")
 	putData := putCmd.String("data", "", "data to store")
-	putDebug := putCmd.Bool("debug", false, "enable debug")
 
 	listCmd := flag.NewFlagSet("list", flag.ExitOnError)
 	listKey := listCmd.String("key", "", "key to the data")
-	listDebug := listCmd.Bool("debug", false, "enable debug")
 
 	deleteCmd := flag.NewFlagSet("delete", flag.ExitOnError)
 	deleteKey := deleteCmd.String("key", "", "key to the data")
-	deleteDebug := deleteCmd.Bool("debug", false, "enable debug")
 
 	if len(os.Args) < 2 {
 		fmt.Println(`
 The fsvcli tool interacts with an FSVault key/value datastore.
 
-Two environment variables control conffiguration:
+Two environment variables control configuration:
 
-    FSVAULT_PATH          the datastore filesystem path, defaults to /tmp
+    FSVAULT_DATADIR          the datastore filesystem path, defaults to /tmp
     FSVAULT_SECRET_KEYS   a list of encryption keys, see docs for more information
 
 Usage:
 
-    fsvcli <command> [arguments] [-debug]
+    fsvcli <command> [arguments]
 
 The commands are:
 
@@ -84,34 +80,34 @@ Examples:
 
 	case "refresh":
 		refreshCmd.Parse(os.Args[2:])
-		err := refreshDataAtKey(*refreshKey, *refreshDebug)
+		err := refreshDataAtKey(*refreshKey)
 		if err != nil {
 			os.Exit(1)
 		}
 
 	case "get":
 		getCmd.Parse(os.Args[2:])
-		err := getDataAtKey(*getKey, *getDebug)
+		err := getDataAtKey(*getKey)
 		if err != nil {
 			os.Exit(1)
 		}
 
 	case "put":
 		putCmd.Parse(os.Args[2:])
-		err := putDataAtKey(*putKey, *putData, *putDebug)
+		err := putDataAtKey(*putKey, *putData)
 		if err != nil {
 			os.Exit(1)
 		}
 
 	case "list":
 		listCmd.Parse(os.Args[2:])
-		err := listDataAtKey(*listKey, *listDebug)
+		err := listDataAtKey(*listKey)
 		if err != nil {
 			os.Exit(1)
 		}
 	case "delete":
 		deleteCmd.Parse(os.Args[2:])
-		err := deleteDataAtKey(*deleteKey, *deleteDebug)
+		err := deleteDataAtKey(*deleteKey)
 		if err != nil {
 			os.Exit(1)
 		}
@@ -123,60 +119,33 @@ Examples:
 If we read a path then it is automatically re-encrypted with the newer
 encryption key.
 */
-func refreshDataAtKey(key string, debug bool) error {
+func refreshDataAtKey(key string) error {
 
-	loggerName := "cli.refreshDataAtKey()"
-
-	fs := fsvault.NewFSVault(location, encryptionKeys...)
-	if debug {
-		fs.EnableDebug()
-	}
-
-	_, err := fs.Get(key)
+	_, err := fsvault.Get(key)
 	if err != nil {
-		fs.LogDebug(fmt.Sprintf("%s: %s", loggerName, err.Error()))
+		log.Println("refreshDataAtKey():", err)
 		return err
 	}
 
 	return nil
 }
 
-func putDataAtKey(key string, data string, debug bool) error {
+func putDataAtKey(key string, data string) error {
 
-	loggerName := "cli.putDataAtKey()"
-
-	fs := fsvault.NewFSVault(location, encryptionKeys...)
-	if debug {
-		fs.EnableDebug()
-	}
-
-	fs.LogDebug(fmt.Sprintf("%s: full path %s", loggerName,
-		fs.FullFilePath(key)))
-
-	err := fs.Put(key, []byte(data))
+	err := fsvault.Put(key, []byte(data))
 	if err != nil {
-		fs.LogDebug(fmt.Sprintf("%s: %s", loggerName, err.Error()))
+		log.Println("putDataAtKey():", err)
 		return err
 	}
 
 	return nil
 }
 
-func getDataAtKey(key string, debug bool) error {
+func getDataAtKey(key string) error {
 
-	loggerName := "cli.getDataAtKey()"
-
-	fs := fsvault.NewFSVault(location, encryptionKeys...)
-	if debug {
-		fs.EnableDebug()
-	}
-
-	fs.LogDebug(fmt.Sprintf("%s: full path %s", loggerName,
-		fs.FullFilePath(key)))
-
-	data, err := fs.Get(key)
+	data, err := fsvault.Get(key)
 	if err != nil {
-		fs.LogDebug(fmt.Sprintf("%s: %s", loggerName, err.Error()))
+		log.Println("getDataAtKey():", err)
 		return err
 	}
 
@@ -185,19 +154,9 @@ func getDataAtKey(key string, debug bool) error {
 	return nil
 }
 
-func deleteDataAtKey(key string, debug bool) error {
+func deleteDataAtKey(key string) error {
 
-	loggerName := "cli.deleteDataAtKey()"
-
-	fs := fsvault.NewFSVault(location, encryptionKeys...)
-	if debug {
-		fs.EnableDebug()
-	}
-
-	fs.LogDebug(fmt.Sprintf("%s: full path %s", loggerName,
-		fs.FullFilePath(key)))
-
-	err := fs.Delete(key)
+	err := fsvault.Delete(key)
 	if err != nil {
 		fmt.Printf("delete failed because %s\n", err.Error())
 	} else {
@@ -207,22 +166,11 @@ func deleteDataAtKey(key string, debug bool) error {
 	return nil
 }
 
-func listDataAtKey(key string, debug bool) error {
+func listDataAtKey(key string) error {
 
-	loggerName := "cli.listDataAtKey()"
-
-	fs := fsvault.NewFSVault(location, encryptionKeys...)
-	if debug {
-		fs.EnableDebug()
-	}
-
-	fs.LogDebug(fmt.Sprintf("%s: full path %s", loggerName,
-		fs.FullFilePath(key)))
-
-	data := fs.List(key)
+	data := fsvault.List(key)
 
 	for _, k := range data {
-
 		fmt.Printf("%s\n", k)
 	}
 
@@ -233,7 +181,12 @@ func getEncryptionKeysFromEnv() []string {
 
 	keysEnvVar := config.StringValue("FSVAULT_SECRET_KEYS")
 	for _, k := range strings.Split(keysEnvVar, ",") {
-		encryptionKeys = append(encryptionKeys, strings.TrimSpace(k))
+
+		if len(k) == 16 || len(k) == 24 || len(k) == 32 {
+			encryptionKeys = append(encryptionKeys, strings.TrimSpace(k))
+		} else {
+			log.Println("fsvault.init(): invalid secret key length, ignoring", k)
+		}
 	}
 
 	return encryptionKeys
