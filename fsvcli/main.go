@@ -11,14 +11,13 @@ import (
 )
 
 var (
-	cfg            *config.Config
 	encryptionKeys []string
 	location       string
 )
 
 func init() {
 	encryptionKeys = getEncryptionKeysFromEnv()
-	location = cfg.ValueAsStr("FSVAULT_PATH")
+	location = config.StringValue("FSVAULT_DATADIR")
 }
 
 /*
@@ -232,7 +231,7 @@ func listDataAtKey(key string, debug bool) error {
 
 func getEncryptionKeysFromEnv() []string {
 
-	keysEnvVar := cfg.ValueAsStr("FSVAULT_SECRET_KEYS")
+	keysEnvVar := config.StringValue("FSVAULT_SECRET_KEYS")
 	for _, k := range strings.Split(keysEnvVar, ",") {
 		encryptionKeys = append(encryptionKeys, strings.TrimSpace(k))
 	}
