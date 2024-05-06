@@ -7,13 +7,18 @@ import (
 )
 
 func main() {
-	fsvault.Put("testkey2", []byte("test data"))
 
-	lock, data, err := fsvault.GetWithLock("testkey")
-	defer lock.Unlock()
-	if err != nil {
-		log.Println(err)
-	}
+	// put some initial data on file
+	fsvault.Put("mysecret", []byte("the wind blows from above"))
 
+	// simply read the data back
+	data, _ := fsvault.Get("mysecret")
 	log.Println("got data:", string(data))
+
+	// read the data WithLock when making a change
+	lock, data, _ := fsvault.GetWithLock("mysecret")
+	defer lock.Unlock()
+
+	// now write a new secret
+	fsvault.Put("mysecret", []byte("the wind blows from below"))
 }
