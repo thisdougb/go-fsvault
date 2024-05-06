@@ -5,21 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/thisdougb/go-fsvault/fsvault"
-	"github.com/thisdougb/go-fsvault/internal/config"
 )
-
-var (
-	encryptionKeys []string
-	datadir        string
-)
-
-func init() {
-	encryptionKeys = getEncryptionKeysFromEnv()
-	datadir = config.StringValue("FSVAULT_DATADIR")
-}
 
 /*
 fsvcli provides a command line interface to an fsvault datastore.
@@ -175,19 +163,4 @@ func listDataAtKey(key string) error {
 	}
 
 	return nil
-}
-
-func getEncryptionKeysFromEnv() []string {
-
-	keysEnvVar := config.StringValue("FSVAULT_SECRET_KEYS")
-	for _, k := range strings.Split(keysEnvVar, ",") {
-
-		if len(k) == 16 || len(k) == 24 || len(k) == 32 {
-			encryptionKeys = append(encryptionKeys, strings.TrimSpace(k))
-		} else {
-			log.Println("fsvault.init(): invalid secret key length, ignoring", k)
-		}
-	}
-
-	return encryptionKeys
 }
