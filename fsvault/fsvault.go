@@ -167,6 +167,16 @@ func Put(key string, data []byte) error {
 	return nil
 }
 
+// GetWithLock returns a locked mutex with the data, enabling synchronised
+// key updates.
+func GetWithLock(key string) (Unlocker, []byte, error) {
+
+	lock := keylocker.lock("test")
+	data, err := Get(key)
+
+	return lock, data, err
+}
+
 // Get returns the data at key, or an error.
 //
 // If encryption keys are present, and a non-primary encryption key successfully

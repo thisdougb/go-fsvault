@@ -11,9 +11,12 @@ import (
 var (
 	datadir        string // root data directory
 	encryptionKeys []string
+	keylocker      *keyLocker
 )
 
 func init() {
+
+	keylocker = newkeyLocker()
 
 	// get the root data directory, under which all keys wil be stored.
 	datadir = config.StringValue("FSVAULT_DATADIR")
@@ -30,15 +33,18 @@ func init() {
 
 func getEncryptionKeysFromEnv() []string {
 
+	keys := []string{}
+
 	keysEnvVar := config.StringValue("FSVAULT_SECRET_KEYS")
+
 	for _, k := range strings.Split(keysEnvVar, ",") {
 
 		if len(k) == 16 || len(k) == 24 || len(k) == 32 {
-			encryptionKeys = append(encryptionKeys, strings.TrimSpace(k))
+			keys = append(keys, strings.TrimSpace(k))
 		} else {
 			log.Println("fsvault.init(): invalid secret key length, ignoring", k)
 		}
 	}
 
-	return encryptionKeys
+	return keys
 }
