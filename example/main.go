@@ -8,7 +8,7 @@ import (
 
 func mapUpdate() {
 
-	mapKey := "/map/email"
+	vaultKey := "/map/email"
 
 	// a type to show generic map usage
 	type EmailEntry struct {
@@ -16,20 +16,20 @@ func mapUpdate() {
 	}
 
 	// map values
-	userIdKey := "myuid"
+	mapKey := "myuid"
 	email := EmailEntry{"myemail@mydomain.com"}
 
 	// because we want to update, use WithLock to take control of the map
-	lock, value := fsvault.GetMapValueWithLock[EmailEntry](mapKey, userIdKey)
+	lock, value := fsvault.GetMapValueWithLock[EmailEntry](vaultKey, mapKey)
 	defer lock.Unlock()
 
 	log.Println("mapUpdate(): initial value:", value)
 
 	// we already have a lock on this map, so we don't use WithLock again
-	fsvault.PutMapValue[EmailEntry](mapKey, userIdKey, email)
+	fsvault.PutMapValue[EmailEntry](vaultKey, mapKey, email)
 
 	// read the whole map
-	data := fsvault.GetMap[EmailEntry](mapKey)
+	data := fsvault.GetMap[EmailEntry](vaultKey)
 
 	log.Println("mapUpdate(): map data:", data)
 }
