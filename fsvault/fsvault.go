@@ -138,9 +138,12 @@ func Put(key string, data []byte) error {
 
 	fd := filedata.FileData{}
 	fd.Data = data
-	fd.Cipher = cipher
 
 	if cipher != "" && len(encryptionKeys) > 0 {
+
+		// if encryption is enabled add the cipher name. currently
+		// only one is supported.
+		fd.Cipher = cipher
 
 		cipherData, err := encryption.Encrypt(encryptionKeys[0], data)
 		if err != nil {
