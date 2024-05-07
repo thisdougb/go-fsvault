@@ -33,6 +33,7 @@ var (
 )
 
 var (
+	// only one cipher supported to simplify usage
 	cipher = "AES-GCM"
 )
 
@@ -64,9 +65,7 @@ func KeyExists(key string) (bool, error) {
 	}
 }
 
-/*
-Delete removes the file or directory (if empty) at key.
-*/
+// Delete removes the file or directory (if empty) at key.
 func Delete(key string) error {
 
 	fullPath := fullFilePath(key)
@@ -84,9 +83,7 @@ func Delete(key string) error {
 	return nil
 }
 
-/*
-List returns an alphabetically sorted list of the object names found a key.
-*/
+// List returns an alphabetically sorted list of the object names found a key.
 func List(key string) []string {
 
 	keysFound := []string{}
