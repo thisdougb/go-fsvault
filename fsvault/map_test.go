@@ -91,6 +91,41 @@ func TestGetMapValue(t *testing.T) {
 	}
 }
 
+func TestGetMapValueWithLock(t *testing.T) {
+
+	var TestCases = []struct {
+		description string
+		key         string
+		value       TestValue
+	}{
+		{
+			description: "first entry",
+			key:         "key1",
+			value:       TestValue{"value1"},
+		},
+		{
+			description: "no entry",
+			key:         "keyA",
+			value:       TestValue{},
+		},
+	}
+
+	defer setupTestDataDir()()
+	testMapKey := "/testmap"
+
+	PutMapValue(testMapKey, "key1", TestValue{"value1"})
+	PutMapValue(testMapKey, "key2", TestValue{"value2"})
+	PutMapValue(testMapKey, "key3", TestValue{"value3"})
+
+	for _, tc := range TestCases {
+
+		lock, value := GetMapValueWithLock[TestValue](testMapKey, tc.key)
+		lock.Unlock()
+
+		assert.Equal(t, tc.value, value, tc.description)
+	}
+}
+
 func TestDeleteMapValue(t *testing.T) {
 
 	defer setupTestDataDir()()
