@@ -19,8 +19,7 @@ func init() {
 	keylocker = newkeyLocker()
 
 	// get the root data directory, under which all keys wil be stored.
-	datadir = config.StringValue("FSVAULT_DATADIR")
-	log.Println("fsvault.init(): using datadir", datadir)
+	SetDataDir(config.StringValue("FSVAULT_DATADIR"))
 
 	// try to load encryption keys from env vars
 	encryptionKeys = getEncryptionKeysFromEnv()
@@ -29,6 +28,12 @@ func init() {
 	} else {
 		log.Println("fsvault.init(): encryption not enabled.")
 	}
+}
+
+// SetDataDir allows overriding of the env var setting
+func SetDataDir(dir string) {
+	datadir = config.StringValue("FSVAULT_DATADIR")
+	log.Println("fsvault.init(): using datadir", datadir)
 }
 
 func getEncryptionKeysFromEnv() []string {
