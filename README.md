@@ -10,18 +10,25 @@ Package and cli tool for storing data on the filesystem, with encryption.
 go install github.com/thisdougb/go-fsvault/fsvcli
 ```
 
+### Features
+
+- A simple key/value store on the filesystem
+- Encryption of data at rest
+- Storing maps of generic types
+- Per key locks for synchronised access
+
 ## Walkthrough
 
 ### Command Line
 
 Two environment variables control conffiguration:
 
-    FSVAULT_PATH          the datastore filesystem path, defaults to /tmp
+    FSVAULT_DATADIR       the datastore filesystem path, defaults to /tmp
     FSVAULT_SECRET_KEYS   a list of encryption keys, see docs for more information
 
 Usage:
 
-    fsvcli <command> [arguments] [-debug]
+    fsvcli <command> [arguments]
 
 The commands are:
 
@@ -42,35 +49,30 @@ Examples:
     Usage of put:
       -data string
         	data to store
-      -debug
-        	enable debug
       -key string
         	key to the data
 
 ### Go Library
 
-```
-import "github.com/thisdougb/go-fsvault/fsvault"
+The example package shows usage.
 
-func NewFSVault(location string, encryptionKeys ...string) *FSVault
-
-func (f *FSVault) KeyExists(key string) (bool, error)
-func (f *FSVault) Put(key string, data []byte) error
-func (f *FSVault) Get(key string) ([]byte, error)
-func (f *FSVault) Delete(key string) error
-func (f *FSVault) List(key string) []string
-```
-
-Simple code usage:
+Write a value at vault key `/user/23/passphrase``:
 
 ```
-keys := getEncryptionKeysFromEnv()
+fsvault.Put("/user/23/passphrase", []byte("the wind blows from above"))
+```
 
-fs := fsvault.NewFSVault("/data/fsvault/", keys...)
-fs.Put("/user/23/passphrase", 
-    []byte("Pssst… The green cow has eaten the maple oatmeal"))
+Read a value at vault key `/user/23/passphrase`:
 
-data, _ := fs.Get("/user/23/passphrase")
+```
+data, _ := fsvault.Get("/user/23/passphrase")
+```
+
+Get a map value (int64), including a lock, at map key, defering the lock release:
+
+```
+lock, value := fsvault.GetMapValueWithLock[int64](vaultKey, mapKey)
+defer lock.Unlock()
 ```
 
 ## Encryption Key Rollover
@@ -85,7 +87,7 @@ First export the keys and path vars:
 
 ```
 $ export FSVAULT_SECRET_KEYS="key1-gsecdddddwwwwdtmylongsecret"
-$ export FSVAULT_PATH="/data/fsvault/"
+$ export FSVAULT_DATADIR="/data/fsvault/"
 ```
 
 Now we can store some encrypted data, and read it back:
@@ -105,7 +107,7 @@ Here I've added the `-debug` flag, to show what's happening:
 
 ```
 $ export FSVAULT_SECRET_KEYS='key2-ensu6fjyivh26fnr5gbaqw3f6go,key1-gsecdddddwwwwdtmylongsecret'
-$ fsvault get -key "/user/23/passphrase" -debug                                           
+$ fsvault get -key "/user/23/passphrase"
 2024/02/05 10:20:14 DEBUG +0.0s [id=fsvault] cli.getDataAtKey(): full path /data/fsvault/user/23/passphrase
 2024/02/05 10:20:14 DEBUG +0.0s [id=fsvault] fsvault.Get(): decrypt error with key 0 = cipher: message authentication failed
 2024/02/05 10:20:14 DEBUG +0.0s [id=fsvault] fsvault.Get(): decrypted data at key /user/23/passphrase
