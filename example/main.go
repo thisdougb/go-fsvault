@@ -6,14 +6,42 @@ import (
 	"github.com/thisdougb/go-fsvault/fsvault"
 )
 
-func main() {
+func mapUpdate() {
+
+	mapKey := "/map/email"
+
+	// a type to show generic map usage
+	type EmailEntry struct {
+		Email string `json:"email"`
+	}
+
+	// map values
+	userIdKey := "myuid"
+	email := EmailEntry{"myemail@mydomain.com"}
+
+	// because we want to update, use WithLock to take control of the map
+	lock, value := fsvault.GetMapValueWithLock[EmailEntry](mapKey, userIdKey)
+	defer lock.Unlock()
+
+	log.Println("mapUpdate(): initial value:", value)
+
+	// we already have a lock on this map, so we don't use WithLock again
+	fsvault.PutMapValue[EmailEntry](mapKey, userIdKey, email)
+
+	// read the whole map
+	data := fsvault.GetMap[EmailEntry](mapKey)
+
+	log.Println("mapUpdate(): map data:", data)
+}
+
+func valueUpdate() {
 
 	// put some initial data on file
 	fsvault.Put("mysecret", []byte("the wind blows from above"))
 
 	// simply read the data back
 	data, _ := fsvault.Get("mysecret")
-	log.Println("got data:", string(data))
+	log.Println("valueUpdate(): got data:", string(data))
 
 	// read the data WithLock when making a change
 	lock, data, _ := fsvault.GetWithLock("mysecret")
@@ -21,4 +49,18 @@ func main() {
 
 	// now write a new secret
 	fsvault.Put("mysecret", []byte("the wind blows from below"))
+
+	// re-read the value
+	data, _ = fsvault.Get("mysecret")
+
+	log.Println("valueUpdate(): got data:", string(data))
+}
+
+func main() {
+
+	// a simple key/value update
+	valueUpdate()
+
+	// a generic map update
+	mapUpdate()
 }
