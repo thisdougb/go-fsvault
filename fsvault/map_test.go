@@ -3,7 +3,7 @@
 package fsvault
 
 import (
-	"encoding/json"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -41,17 +41,19 @@ func TestPutMapValue(t *testing.T) {
 		},
 	}
 
-	defer setupTestDataDir()()
+	testRootDir, err := os.MkdirTemp("", "thisdougb-fsvault")
+	if err != nil {
+		assert.Fail(t, err.Error())
+	}
+	defer os.RemoveAll(testRootDir) // clean up
 
 	testMapKey := "/testmap"
-	testMap := make(map[string]TestValue)
 
 	for _, tc := range TestCases {
 
-		PutMapValue(testMapKey, tc.key, tc.value)
+		PutMapValue(testRootDir, testMapKey, tc.key, tc.value)
 
-		data, _ := Get(testMapKey)
-		json.Unmarshal(data, &testMap)
+		testMap := GetMap[TestValue](testRootDir, testMapKey)
 
 		assert.Equal(t, tc.result, len(testMap), tc.description)
 	}
@@ -76,16 +78,61 @@ func TestGetMapValue(t *testing.T) {
 		},
 	}
 
-	defer setupTestDataDir()()
+	testRootDir, err := os.MkdirTemp("", "thisdougb-fsvault")
+	if err != nil {
+		assert.Fail(t, err.Error())
+	}
+	defer os.RemoveAll(testRootDir) // clean up
+
 	testMapKey := "/testmap"
 
-	PutMapValue(testMapKey, "key1", TestValue{"value1"})
-	PutMapValue(testMapKey, "key2", TestValue{"value2"})
-	PutMapValue(testMapKey, "key3", TestValue{"value3"})
+	PutMapValue(testRootDir, testMapKey, "key1", TestValue{"value1"})
+	PutMapValue(testRootDir, testMapKey, "key2", TestValue{"value2"})
+	PutMapValue(testRootDir, testMapKey, "key3", TestValue{"value3"})
 
 	for _, tc := range TestCases {
 
-		value := GetMapValue[TestValue](testMapKey, tc.key)
+		value := GetMapValue[TestValue](testRootDir, testMapKey, tc.key)
+
+		assert.Equal(t, tc.value, value, tc.description)
+	}
+}
+
+func TestGetMapValueWithLock(t *testing.T) {
+
+	var TestCases = []struct {
+		description string
+		key         string
+		value       TestValue
+	}{
+		{
+			description: "first entry",
+			key:         "key1",
+			value:       TestValue{"value1"},
+		},
+		{
+			description: "no entry",
+			key:         "keyA",
+			value:       TestValue{},
+		},
+	}
+
+	testRootDir, err := os.MkdirTemp("", "thisdougb-fsvault")
+	if err != nil {
+		assert.Fail(t, err.Error())
+	}
+	defer os.RemoveAll(testRootDir) // clean up
+
+	testMapKey := "/testmap"
+
+	PutMapValue(testRootDir, testMapKey, "key1", TestValue{"value1"})
+	PutMapValue(testRootDir, testMapKey, "key2", TestValue{"value2"})
+	PutMapValue(testRootDir, testMapKey, "key3", TestValue{"value3"})
+
+	for _, tc := range TestCases {
+
+		lock, value := GetMapValueWithLock[TestValue](testRootDir, testMapKey, tc.key)
+		lock.Unlock()
 
 		assert.Equal(t, tc.value, value, tc.description)
 	}
@@ -93,21 +140,26 @@ func TestGetMapValue(t *testing.T) {
 
 func TestDeleteMapValue(t *testing.T) {
 
-	defer setupTestDataDir()()
+	testRootDir, err := os.MkdirTemp("", "thisdougb-fsvault")
+	if err != nil {
+		assert.Fail(t, err.Error())
+	}
+	defer os.RemoveAll(testRootDir) // clean up
+
 	testMapKey := "/testmap"
 
-	PutMapValue(testMapKey, "key1", TestValue{"value1"})
-	PutMapValue(testMapKey, "key2", TestValue{"value2"})
-	PutMapValue(testMapKey, "key3", TestValue{"value3"})
+	PutMapValue(testRootDir, testMapKey, "key1", TestValue{"value1"})
+	PutMapValue(testRootDir, testMapKey, "key2", TestValue{"value2"})
+	PutMapValue(testRootDir, testMapKey, "key3", TestValue{"value3"})
 
-	DeleteMapValue[TestValue](testMapKey, "key2")
+	DeleteMapValue[TestValue](testRootDir, testMapKey, "key2")
 
-	value := GetMapValue[TestValue](testMapKey, "key1")
+	value := GetMapValue[TestValue](testRootDir, testMapKey, "key1")
 	assert.Equal(t, "value1", value.Id, "key1")
 
-	value = GetMapValue[TestValue](testMapKey, "key2")
+	value = GetMapValue[TestValue](testRootDir, testMapKey, "key2")
 	assert.Equal(t, "", value.Id, "key2")
 
-	value = GetMapValue[TestValue](testMapKey, "key3")
+	value = GetMapValue[TestValue](testRootDir, testMapKey, "key3")
 	assert.Equal(t, "value3", value.Id, "key3")
 }

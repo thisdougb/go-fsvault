@@ -9,21 +9,21 @@ import (
 // GetMapWithLock returns the map with a lock the caller must
 // unlock. If the map doesn't exist, the key lock is still
 // returned.
-func GetMapWithLock[V any](key string) (Unlocker, map[string]V) {
+func GetMapWithLock[V any](vaultRoot string, vaultKey string) (Unlocker, map[string]V) {
 
-	lock := keylocker.lock(key)
-	data := GetMap[V](key)
+	lock := keylocker.lock(vaultKey)
+	data := GetMap[V](vaultRoot, vaultKey)
 
 	return lock, data
 }
 
 // GetMap returns the map at key, or an empty map if it doesn't exist.
-func GetMap[V any](key string) map[string]V {
+func GetMap[V any](vaultRoot string, vaultKey string) map[string]V {
 
 	data := make(map[string]V)
 
 	// get map
-	dataBytes, err := Get(key)
+	dataBytes, err := Get(vaultRoot, vaultKey)
 	if err != nil {
 		return data
 	}
@@ -38,24 +38,24 @@ func GetMap[V any](key string) map[string]V {
 
 // GetMapValueWithLock returns the value and a lock on the map, the caller
 // must release the lock.
-func GetMapValueWithLock[V any](key string, mapkey string) (Unlocker, V) {
+func GetMapValueWithLock[V any](vaultRoot string, vaultKey string, mapKey string) (Unlocker, V) {
 
-	lock := keylocker.lock(key)
-	data := GetMapValue[V](mapkey, key)
+	lock := keylocker.lock(vaultKey)
+	data := GetMapValue[V](vaultRoot, vaultKey, mapKey)
 
 	return lock, data
 }
 
-func GetMapValue[V any](key string, mapkey string) V {
+func GetMapValue[V any](vaultRoot string, vaultKey string, mapKey string) V {
 
 	var value V
 
 	// get map
-	dataBytes, err := Get(key)
+	dataBytes, err := Get(vaultRoot, vaultKey)
 	if err != nil {
 		// if the changelog doesn't exist yet, that's ok, otherwise...
 		if !strings.Contains(err.Error(), "no such file or directory") {
-			log.Println("datastore.MapGet():", err)
+			log.Println("fsvault.datastore.MapGet():", err)
 			return value
 		}
 	}
@@ -68,22 +68,23 @@ func GetMapValue[V any](key string, mapkey string) V {
 	}
 
 	// if the entry exists...
-	_, ok := data[mapkey]
+	_, ok := data[mapKey]
 	if ok {
-		return data[mapkey]
+		return data[mapKey]
 	}
 
 	return value
 }
 
-func PutMapValue[V any](mapkey string, key string, value V) {
+// PutMapValue adds value at mapKey, or overwrites value if it exists
+func PutMapValue[V any](vaultRoot string, vaultKey string, mapKey string, value V) {
 
-	// get map
-	dataBytes, err := Get(mapkey)
+	// get map assuming any prior read call already has a lock
+	dataBytes, err := Get(vaultRoot, vaultKey)
 	if err != nil {
 		// if the changelog doesn't exist yet, that's ok, otherwise...
 		if !strings.Contains(err.Error(), "no such file or directory") {
-			log.Println("datastore.MapPut():", err)
+			log.Println("fsvault.datastore.MapPut():", err)
 			return
 		}
 	}
@@ -95,27 +96,21 @@ func PutMapValue[V any](mapkey string, key string, value V) {
 		json.Unmarshal(dataBytes, &mapData)
 	}
 
-	// if the entry already exists...
-	_, ok := mapData[key]
-	if ok {
-		return
-	}
-
-	// add new entry
-	mapData[key] = value
+	// add/overwrite entry
+	mapData[mapKey] = value
 
 	dataBytes, _ = json.Marshal(mapData)
 
-	err = Put(mapkey, dataBytes)
+	err = Put(vaultRoot, vaultKey, dataBytes)
 	if err != nil {
-		log.Println("datastore.MapPut():", err)
+		log.Println("fsvault.datastore.MapPut():", err)
 	}
 }
 
-func DeleteMapValue[V any](mapkey string, key string) {
+func DeleteMapValue[V any](vaultRoot string, vaultKey string, mapKey string) {
 
-	// get map
-	dataBytes, err := Get(mapkey)
+	// get map assuming any prior read call already has a lock
+	dataBytes, err := Get(vaultRoot, vaultKey)
 	if err != nil {
 		// if the changelog doesn't exist yet, that's ok, otherwise...
 		if !strings.Contains(err.Error(), "no such file or directory") {
@@ -133,14 +128,15 @@ func DeleteMapValue[V any](mapkey string, key string) {
 	json.Unmarshal(dataBytes, &mapData)
 
 	// if the entry doesn't exist
-	_, ok := mapData[key]
+	_, ok := mapData[mapKey]
 	if !ok {
 		return
 	}
 
-	delete(mapData, key)
+	delete(mapData, mapKey)
 
 	dataBytes, _ = json.Marshal(mapData)
 
-	Put(mapkey, dataBytes)
+	// Put the map back
+	Put(vaultRoot, vaultKey, dataBytes)
 }
